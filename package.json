@@ -8,6 +8,7 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.29.0",
     "html-webpack-plugin": "^5.5.3",
+    "postcss-loader": "^7.3.3",
     "prettier": "^3.1.0",
     "sass": "^1.69.5",
     "sass-loader": "^13.3.2",
