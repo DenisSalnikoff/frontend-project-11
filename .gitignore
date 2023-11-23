@@ -1,4 +1,2 @@
 node_modules
-dist/index.html
-dist/main.css
-dist/main.js
+dist/
