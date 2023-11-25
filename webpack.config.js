@@ -1,8 +1,10 @@
 // Generated using webpack-cli https://github.com/webpack/webpack-cli
 
 const path = require('path');
+const glob = require('glob');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { PurgeCSSPlugin } = require('purgecss-webpack-plugin');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -23,6 +25,10 @@ const config = {
     }),
 
     new MiniCssExtractPlugin(),
+
+    new PurgeCSSPlugin({
+      paths: glob.sync(`${path.resolve(__dirname, 'dist')}/**/*`, { nodir: true }),
+    }),
 
     // Add your plugins here
     // Learn more about plugins from https://webpack.js.org/configuration/plugins/
