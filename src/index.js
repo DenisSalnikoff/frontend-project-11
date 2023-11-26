@@ -32,14 +32,9 @@ rssLinkForm.addEventListener('submit', (e) => {
     .then((link) => {
       watchedState.inputError = null;
       watchedState.rssUrls.push(link);
-      const config = {
-        headers: {
-          CORS: 'Access-Control-Allow-Origin',
-        },
-      };
       return axios.get(`https://allorigins.hexlet.app/get?url=${link}`);
     })
-    .then((response) => console.log(response));
+    .then((response) => response);
   const inputField = e.target.querySelector('input');
   // clear inputField
   inputField.value = '';
