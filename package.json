@@ -88,6 +88,7 @@
     "minimatch": "^3.1.2",
     "ms": "^2.1.2",
     "natural-compare": "^1.4.0",
+    "on-change": "^4.0.2",
     "once": "^1.4.0",
     "optionator": "^0.9.3",
     "p-limit": "^3.1.0",
