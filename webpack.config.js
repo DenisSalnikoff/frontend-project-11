@@ -26,9 +26,9 @@ const config = {
 
     new MiniCssExtractPlugin(),
 
-    // new PurgeCSSPlugin({
-    //   paths: glob.sync(`${path.resolve(__dirname, 'dist')}/**/*`, { nodir: true }),
-    // }),
+    new PurgeCSSPlugin({
+      paths: glob.sync(`${path.resolve(__dirname, 'dist')}/**/*`, { nodir: true }),
+    }),
 
     // Add your plugins here
     // Learn more about plugins from https://webpack.js.org/configuration/plugins/
@@ -42,6 +42,13 @@ const config = {
       {
         test: /\.s[ac]ss$/i,
         use: [stylesHandler, 'css-loader', 'postcss-loader', 'sass-loader'],
+      },
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+        ],
       },
       {
         test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
