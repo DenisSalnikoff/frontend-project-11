@@ -26,9 +26,9 @@ const config = {
 
     new MiniCssExtractPlugin(),
 
-    new PurgeCSSPlugin({
-      paths: glob.sync(`${path.resolve(__dirname, 'dist')}/**/*`, { nodir: true }),
-    }),
+    // new PurgeCSSPlugin({
+    //   paths: glob.sync(`${path.resolve(__dirname, 'dist')}/**/*`, { nodir: true }),
+    // }),
 
     // Add your plugins here
     // Learn more about plugins from https://webpack.js.org/configuration/plugins/
