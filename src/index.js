@@ -3,13 +3,29 @@ import 'bootstrap';
 import * as yup from 'yup';
 import onChange from 'on-change';
 import i18n from 'i18next';
-import axios from 'axios';
 import view from './view';
 import resources from '../i18n/index';
+import addFeed from './addFeed';
 
 const state = {
   inputError: null,
-  rssUrls: [],
+  feeds: [
+    // {
+    //   url,
+    //   title,
+    //   description,
+    //   lastPubDate,
+    //   posts: [
+    //     {
+    //       title,
+    //       description,
+    //       link,
+    //     },
+    //     item2,
+    //   ],
+    // },
+    // feed2,
+  ],
 };
 i18n.init({
   lng: 'ru',
@@ -18,30 +34,26 @@ i18n.init({
 });
 
 const rssLinkForm = document.querySelector('form');
-const rssContent = document.querySelector('div.posts');
 
 const watchedState = onChange(state, view);
-const parser = new DOMParser();
 rssLinkForm.addEventListener('submit', (e) => {
   // getting data
   e.preventDefault();
   const formData = new FormData(e.target);
   // validating
-  const schema = yup.string().url('invalidURL').notOneOf(state.rssUrls, 'alreadyAdded');
-  schema.validate(formData.get('url'))
+  const inputUrl = formData.get('url');
+  const addedUrls = state.feeds.map(({ url }) => url);
+  const schema = yup.string().url('invalidURL').notOneOf(addedUrls, 'alreadyAdded');
+  const stopError = new Error('stop');
+  schema.validate(inputUrl)
     .catch((error) => {
       watchedState.inputError = error.message;
-      throw new Error('stop');
+      throw stopError;
     })
-    .then((link) => {
+    .then(() => {
       watchedState.inputError = null;
-      watchedState.rssUrls.push(link);
-      return axios.get(`https://allorigins.hexlet.app/get?url=${link}`);
-    })
-    .then((response) => {
-      const rssXml = parser.parseFromString(response.data.contents, 'text/xml');
-      //rssContent.append(rssXml.firstChild);
-      console.log(rssXml);
+      const getWatchedState = () => watchedState;
+      addFeed(inputUrl, getWatchedState, true);
     });
   const inputField = e.target.querySelector('input');
   // clear inputField
