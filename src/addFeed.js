@@ -7,14 +7,20 @@ const add = (url, getWatchedState, firstAdd = false) => {
       const parser = new DOMParser();
       const rssXml = parser.parseFromString(response.data.contents, 'text/xml');
       const rss = rssXml.querySelector('rss');
+
+      // Validatin RSS
       if (!rss) {
         if (firstAdd) {
           watchedState.inputError = 'invalidRss';
         } else {
-          setTimeout(add(rssUrl, getWatchedState), 5000);
+          setTimeout(() => add(url, getWatchedState), 5000);
         }
         return;
       }
+
+      // RSS valid, set new task for refresh
+      window.setTimeout(() => add(url, getWatchedState), 5000);
+
       const items = rss.querySelectorAll('item');
       const extractableTags = ['title', 'link', 'description', 'pubDate'];
       const posts = [];
@@ -36,7 +42,23 @@ const add = (url, getWatchedState, firstAdd = false) => {
         lastPubDate,
         posts,
       };
-      watchedState.posts.push(result);
+      const equilFeed = watchedState.feeds.find(({ url: currentUrl }) => currentUrl === url);
+      if (!equilFeed) {
+        watchedState.feeds.push(result);
+        console.log(watchedState);
+        return;
+      }
+
+      // Feed review
+      if (equilFeed.lastPubDate.getTime() === result.lastPubDate.getTime()) {
+        console.log('nothing new');
+        return;
+      }
+      const i = watchedState.feeds.indexOf(equilFeed);
+      watchedState.feeds[i] = result;
+      console.log(equilFeed.lastPubDate);
+      console.log(result.lastPubDate);
+      console.log('updating');
     });
 };
 
