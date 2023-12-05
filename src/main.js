@@ -29,6 +29,15 @@ const state = {
     // },
     // feed2,
   ],
+  UIState: {
+    posts: [
+      // {
+      //   link,
+      //   readed,
+      // },
+      // post2,
+    ],
+  },
 };
 i18n.init({
   lng: 'ru',
@@ -82,6 +91,17 @@ const parseRSS = (rss) => {
   return result;
 };
 
+const addClickListenersToPosts = (feed) => {
+  const postsBlock = document.querySelector('.posts');
+  feed.posts.forEach(({ link }) => {
+    const postEl = postsBlock.querySelector(`a[href="${link}"]`);
+    postEl.addEventListener('click', () => {
+      const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
+      watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
+    });
+  });
+};
+
 const refreshFeed = (url) => getRssXml(url).then((rss) => {
   if (!rss) {
     return;
@@ -90,7 +110,14 @@ const refreshFeed = (url) => getRssXml(url).then((rss) => {
   const refreshedFeed = parseRSS(rss);
   refreshedFeed.url = url;
   if (refreshedFeed.lastPubDate.getTime() > oldFeed.lastPubDate.getTime()) {
+    refreshedFeed.posts.forEach((refrPost) => {
+      const postUI = state.UIState.posts.find(({ link }) => refrPost.link === link);
+      if (!postUI) {
+        state.UIState.posts.push({ link: refrPost.link, readed: false });
+      }
+    });
     watchedState.feeds[state.feeds.indexOf(oldFeed)] = refreshedFeed;
+    addClickListenersToPosts(refreshedFeed);
   }
   setTimeout(() => refreshFeed(url), 5000);
 });
@@ -107,9 +134,13 @@ const addFeed = (url) => {
 
     const feed = parseRSS(rss);
     feed.url = url;
+    // create UIState elemets for post
+    feed.posts.forEach(({ link }) => state.UIState.posts.push({ link, readed: false }));
+    // add new posts
     watchedState.hasFeed = true;
     watchedState.feeds[watchedState.feeds.length] = feed;
     watchedState.interface = { valid: true, message: 'added' };
+    addClickListenersToPosts(feed);
     window.setTimeout(() => refreshFeed(url), 5000);
   });
 };

@@ -58,7 +58,7 @@ const renderNewFeed = (feed) => {
   feedEl.append(feedDescription);
 };
 
-const renderPosts = (feed) => {
+const renderPosts = (feed, state) => {
   const { posts } = feed;
   const postCont = document.querySelector('.posts ul');
 
@@ -75,8 +75,10 @@ const renderPosts = (feed) => {
     );
     // --create link
     const a = document.createElement('a');
-    a.classList.add('fw-bold');
+    const { readed } = state.UIState.posts.find(({ link }) => link === post.link);
+    a.classList.add(readed ? 'fw-normal' : 'fw-bold');
     a.setAttribute('href', post.link);
+    a.setAttribute('target', '_blank');
     a.textContent = post.title;
     postEl.append(a);
     // --create button
@@ -95,14 +97,30 @@ const renderPosts = (feed) => {
   });
 };
 
-const renderRSS = (newFeed, oldFeed) => {
+const renderRSS = (newFeed, oldFeed, state) => {
   if (!oldFeed) {
     renderNewFeed(newFeed);
   }
-  renderPosts(newFeed);
+  renderPosts(newFeed, state);
 };
 
-export default (path, value, prevValue) => {
+const renderPostUI = ({ link, readed }) => {
+  const postLinkEl = document.querySelector(`.posts a[href="${link}"]`);
+  postLinkEl.classList.remove('fw-bold', 'fw-normal');
+  const readedClass = readed ? 'fw-normal' : 'fw-bold';
+  postLinkEl.classList.add(readedClass);
+};
+
+const UIStateHandler = (splitedPath, value) => {
+  switch (splitedPath[1]) {
+    case 'posts':
+      renderPostUI(value);
+      break;
+    default:
+  }
+};
+
+export default function view(path, value, prevValue) {
   const splitedPath = path.split('.');
   switch (splitedPath[0]) {
     case 'interface':
@@ -112,8 +130,11 @@ export default (path, value, prevValue) => {
       renderFeedsHead();
       break;
     case 'feeds':
-      renderRSS(value, prevValue);
+      renderRSS(value, prevValue, this);
+      break;
+    case 'UIState':
+      UIStateHandler(splitedPath, value);
       break;
     default:
   }
-};
+}
