@@ -10,5 +10,6 @@ export default {
       feeds: 'Фиды',
       posts: 'Посты',
     },
+    readBtnName: 'Просмотр',
   },
 };

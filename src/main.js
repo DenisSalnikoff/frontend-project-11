@@ -89,7 +89,7 @@ const refreshFeed = (url) => getRssXml(url).then((rss) => {
   const oldFeed = state.feeds.find((el) => el.url === url);
   const refreshedFeed = parseRSS(rss);
   refreshedFeed.url = url;
-  if (refreshedFeed.lastPubDate.getTime > oldFeed.lastPubDate.getTime()) {
+  if (refreshedFeed.lastPubDate.getTime() > oldFeed.lastPubDate.getTime()) {
     watchedState.feeds[state.feeds.indexOf(oldFeed)] = refreshedFeed;
   }
   setTimeout(() => refreshFeed(url), 5000);
@@ -108,7 +108,7 @@ const addFeed = (url) => {
     const feed = parseRSS(rss);
     feed.url = url;
     watchedState.hasFeed = true;
-    watchedState.feeds.push(feed);
+    watchedState.feeds[watchedState.feeds.length] = feed;
     watchedState.interface = { valid: true, message: 'added' };
     window.setTimeout(() => refreshFeed(url), 5000);
   });

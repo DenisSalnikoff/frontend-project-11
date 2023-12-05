@@ -43,37 +43,68 @@ const renderFeedsHead = () => {
   postsBody.append(postsListEl);
 };
 
-const addNewFeed = (newFeed, postCont, feedCont) => {
+const renderNewFeed = (feed) => {
+  const feedCont = document.querySelector('.feeds ul');
   const feedEl = document.createElement('li');
   feedEl.classList.add('list-group-item', 'border-0', 'border-end-0');
   feedCont.append(feedEl);
   const feedTitle = document.createElement('h3');
   feedTitle.classList.add('h6', 'm-0');
-  feedTitle.textContent = newFeed.title;
+  feedTitle.textContent = feed.title;
   feedEl.append(feedTitle);
   const feedDescription = document.createElement('p');
   feedDescription.classList.add('m-0', 'small', 'text-black-50');
-  feedDescription.textContent = newFeed.description;
+  feedDescription.textContent = feed.description;
   feedEl.append(feedDescription);
 };
 
-const editPosts = (modFeed, postCont, feedCont) => {
+const renderPosts = (feed) => {
+  const { posts } = feed;
+  const postCont = document.querySelector('.posts ul');
 
+  posts.forEach((post) => {
+    // create new element
+    const postEl = document.createElement('li');
+    postEl.classList.add(
+      'list-group-item',
+      'd-flex',
+      'justify-content-between',
+      'align-item-start',
+      'border-0',
+      'border-end-0',
+    );
+    // --create link
+    const a = document.createElement('a');
+    a.classList.add('fw-bold');
+    a.setAttribute('href', post.link);
+    a.textContent = post.title;
+    postEl.append(a);
+    // --create button
+    const btn = document.createElement('button');
+    btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    btn.textContent = i18n.t('readBtnName');
+    postEl.append(btn);
+    const postLinkEl = postCont.querySelector(`a[href="${post.link}"]`);
+    // add or replace element
+    if (postLinkEl) {
+      const oldPostEl = postLinkEl.parentNode;
+      postCont.replaceChild(postEl, oldPostEl);
+    } else {
+      postCont.append(postEl);
+    }
+  });
 };
 
-const renderFeedsList = (newFeeds, oldFeeds) => {
-  const postCont = document.querySelector('.posts ul');
-  const feedCont = document.querySelector('.feeds ul');
-  if (newFeeds.length !== oldFeeds) {
-    addNewFeed(newFeeds[newFeeds.length - 1], postCont, feedCont);
-    return;
+const renderRSS = (newFeed, oldFeed) => {
+  if (!oldFeed) {
+    renderNewFeed(newFeed);
   }
-  const modFeed = newFeeds.find((feed, i) => feed !== oldFeeds[i]);
-  editPosts(modFeed, postCont, feedCont);
-}
+  renderPosts(newFeed);
+};
 
 export default (path, value, prevValue) => {
-  switch (path) {
+  const splitedPath = path.split('.');
+  switch (splitedPath[0]) {
     case 'interface':
       renderError(value);
       break;
@@ -81,7 +112,7 @@ export default (path, value, prevValue) => {
       renderFeedsHead();
       break;
     case 'feeds':
-      renderFeedsList(value, prevValue);
+      renderRSS(value, prevValue);
       break;
     default:
   }
