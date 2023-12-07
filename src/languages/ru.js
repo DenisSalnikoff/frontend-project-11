@@ -5,6 +5,8 @@ export default {
       alreadyAdded: 'RSS уже существует',
       invalidRss: 'Ресурс не содержит валидный RSS',
       added: 'RSS успешно загружен',
+      responseError: 'Ошибка сети',
+      gettingRSS: 'Просмотр',
     },
     titles: {
       feeds: 'Фиды',

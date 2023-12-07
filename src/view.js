@@ -85,6 +85,10 @@ const renderPosts = (feed, state) => {
     const btn = document.createElement('button');
     btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     btn.textContent = i18n.t('readBtnName');
+    btn.dataset.bsToggle = 'modal';
+    btn.dataset.bsWhatever = `${post.link}`;
+    btn.setAttribute('href', '#modal');
+
     postEl.append(btn);
     const postLinkEl = postCont.querySelector(`a[href="${post.link}"]`);
     // add or replace element

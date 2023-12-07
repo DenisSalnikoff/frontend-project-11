@@ -29,6 +29,7 @@ const state = {
     // },
     // feed2,
   ],
+  previewsPost: null,
   UIState: {
     posts: [
       // {
@@ -47,6 +48,7 @@ i18n.init({
 
 // VIEW
 const rssLinkForm = document.querySelector('form');
+const modalEl = document.querySelector('#modal');
 
 // CONTROLLER
 const watchedState = onChange(state, view);
@@ -57,9 +59,12 @@ const parser = new DOMParser();
 const getRssXml = (rssUrl) => {
   proxyUrl.searchParams.set('url', rssUrl);
   const result = axios.get(proxyUrl).then((response) => {
-    const xmlDoc = parser.parseFromString(response.data.contents, 'text/xml');
-    const rss = xmlDoc.querySelector('rss');
-    return rss;
+    if (response.status >= 200 && response.status < 300) {
+      const xmlDoc = parser.parseFromString(response.data.contents, 'text/xml');
+      const rss = xmlDoc.querySelector('rss');
+      return rss;
+    }
+    return 'responseError';
   });
   return result;
 };
@@ -91,14 +96,16 @@ const parseRSS = (rss) => {
   return result;
 };
 
+const setPostReaded = (link) => {
+  const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
+  watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
+};
+
 const addClickListenersToPosts = (feed) => {
   const postsBlock = document.querySelector('.posts');
   feed.posts.forEach(({ link }) => {
     const postEl = postsBlock.querySelector(`a[href="${link}"]`);
-    postEl.addEventListener('click', () => {
-      const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
-      watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
-    });
+    postEl.addEventListener('click', () => setPostReaded(link));
   });
 };
 
@@ -124,8 +131,14 @@ const refreshFeed = (url) => getRssXml(url).then((rss) => {
 
 // trying to add feed to the feedpool
 const addFeed = (url) => {
+  watchedState.interface = { valid: true, message: 'gettingRSS' };
   const rssPromise = getRssXml(url);
   rssPromise.then((rss) => {
+    // Validating response
+    if (rss === 'responseError') {
+      watchedState.interface = { valid: false, message: 'responseError' };
+      return;
+    }
     // Validating rss
     if (!rss) {
       watchedState.interface = { valid: false, message: 'invalidRss' };
@@ -166,6 +179,19 @@ const app = () => {
     const inputField = e.target.querySelector('input');
     inputField.value = '';
     inputField.focus();
+  });
+  modalEl.addEventListener('show.bs.modal', (e) => {
+    const button = e.relatedTarget;
+    const link = button.getAttribute('data-bs-whatever');
+    const posts = state.feeds.flatMap((feed) => feed.posts);
+    const { title, description } = posts.find((post) => post.link === link);
+    const modalTitle = modalEl.querySelector('.modal-title');
+    modalTitle.textContent = title;
+    const modalBody = modalEl.querySelector('.modal-body');
+    modalBody.textContent = description;
+    const modalPrimiryButton = modalEl.querySelector('.modal-footer .btn-primary');
+    modalPrimiryButton.setAttribute('href', link);
+    setPostReaded(link);
   });
 };
 
