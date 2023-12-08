@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import axios from 'axios';
 import view from './view';
 import resources from './languages/index';
-import { getRssXml, parseRSS } from './rssUtils';
+import { getRssXml, parseRSS, getFeedObj } from './rssUtils';
 
 const app = () => {
   // MODEL
@@ -20,18 +20,23 @@ const app = () => {
       //   title,
       //   description,
       //   lastPubDate,
-      //   posts: [
-      //     {
-      //       title,
-      //       description,
-      //       link,
-      //     },
-      //     item2,
-      //   ],
       // },
       // feed2,
     ],
-    previewsPost: null,
+    posts: [
+      // {
+      //   title,
+      //   description,
+      //   link,
+      //   pubDate,
+      // },
+      // item2,
+    ],
+    previewedPost: {
+      // link,
+      // title,
+      // description,
+    },
     UIState: {
       posts: [
         // {
@@ -61,6 +66,7 @@ const app = () => {
   // CONTROLLER
   const watchedState = onChange(state, view);
   const proxyUrl = new URL('https://allorigins.hexlet.app/get');
+  const refreshInterval = 5000;
 
   const setPostReaded = (link) => {
     const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
@@ -68,9 +74,9 @@ const app = () => {
   };
 
   // set click listener to all post of unput feed. Listener making link viewed
-  const addClickListenersToPosts = (feed) => {
+  const addClickListenersToPosts = (posts) => {
     const postsBlock = document.querySelector('.posts');
-    feed.posts.forEach(({ link }) => {
+    posts.forEach(({ link }) => {
       const postEl = postsBlock.querySelector(`a[href="${link}"]`);
       postEl.addEventListener('click', () => setPostReaded(link));
     });
@@ -83,25 +89,44 @@ const app = () => {
       .then((response) => {
         const rssXml = getRssXml(response);
         // validating RSS XML object
-        if (rssXml) {
-          const oldFeed = state.feeds.find((el) => el.url === url);
-          const refreshedFeed = parseRSS(rssXml);
-          refreshedFeed.url = url;
-          // compare last public date of new and old feeds objects
-          if (refreshedFeed.lastPubDate.getTime() > oldFeed.lastPubDate.getTime()) {
-            refreshedFeed.posts.forEach((refrPost) => {
-              const postUI = state.UIState.posts.find(({ link }) => refrPost.link === link);
-              if (!postUI) {
-                state.UIState.posts.push({ link: refrPost.link, readed: false });
-              }
-            });
-            watchedState.feeds[state.feeds.indexOf(oldFeed)] = refreshedFeed;
-            addClickListenersToPosts(refreshedFeed);
-          }
+        if (!rssXml) {
+          setTimeout(() => refreshFeed(url), refreshInterval);
+          return;
         }
-        setTimeout(() => refreshFeed(url), 5000);
+
+        const rssObj = parseRSS(rssXml);
+        // get new and old feeds objects
+        const newFeed = { ...getFeedObj(rssObj), url };
+        const oldFeed = state.feeds.find((el) => el.url === url);
+        // compare last public date of new and old feeds objects
+        if (newFeed.lastPubDate.getTime() === oldFeed.lastPubDate.getTime()) {
+          setTimeout(() => refreshFeed(url), refreshInterval);
+          return;
+        }
+
+        // replace feed
+        watchedState.feeds[state.feeds.indexOf(oldFeed)] = newFeed;
+        // replace or add posts if it need
+        rssObj.posts.forEach((newPost) => {
+          const oldPost = state.posts.find(({ link }) => newPost.link === link);
+          // replace case
+          if (oldPost && oldPost.pubDate.getTime() < newPost.pubDate.getTime()) {
+            const oldPostUIIndex = state.UIState.posts
+              .findIndex(({ link }) => newPost.link === link);
+            state.UIState.posts[oldPostUIIndex] = { link: newPost.link, readed: false };
+            watchedState.posts[state.posts.indexOf(oldPost)] = newPost;
+          }
+          // add case
+          if (!oldPost) {
+            state.UIState.posts.push({ link: newPost.link, readed: false });
+            watchedState.posts[state.posts.length] = newPost;
+          }
+        });
+
+        addClickListenersToPosts(rssObj.posts);
+        setTimeout(() => refreshFeed(url), refreshInterval);
       })
-      .catch(() => setTimeout(() => refreshFeed(url), 5000));
+      .catch(() => setTimeout(() => refreshFeed(url), refreshInterval));
   };
 
   // handler of submit button
@@ -129,20 +154,25 @@ const app = () => {
         if (!rssXml) {
           throw new Error('invalidRss');
         }
+        // Parsing rss from XML to object
+        const rssObj = parseRSS(rssXml);
 
-        // Parsing rssXML to feed object
-        const feed = parseRSS(rssXml);
-        feed.url = inputUrl;
+        // getting feed info
+        const feed = { ...getFeedObj(rssObj), url: inputUrl };
 
-        // create UIState elemets for post
-        feed.posts.forEach(({ link }) => state.UIState.posts.push({ link, readed: false }));
-
-        // adding new posts
+        // adding new feed
         watchedState.hasFeed = true;
-        watchedState.feeds[watchedState.feeds.length] = feed;
+        watchedState.feeds[state.feeds.length] = feed;
+
+        // adding new posts and create UIState elemets for post
+        rssObj.posts.forEach((post) => {
+          state.UIState.posts.push({ link: post.link, readed: false });
+          watchedState.posts[state.posts.length] = post;
+        });
+        addClickListenersToPosts(rssObj.posts);
+
         watchedState.interface = { valid: true, message: 'added' };
-        addClickListenersToPosts(feed);
-        window.setTimeout(() => refreshFeed(feed.url), 5000);
+        window.setTimeout(() => refreshFeed(inputUrl), refreshInterval);
       })
       .catch((error) => {
         const message = error.request ? 'requestError' : error.message;
@@ -157,14 +187,12 @@ const app = () => {
   modalEl.addEventListener('show.bs.modal', (e) => {
     const button = e.relatedTarget;
     const link = button.getAttribute('data-bs-whatever');
-    const posts = state.feeds.flatMap((feed) => feed.posts);
-    const { title, description } = posts.find((post) => post.link === link);
-    const modalTitle = modalEl.querySelector('.modal-title');
-    modalTitle.textContent = title;
-    const modalBody = modalEl.querySelector('.modal-body');
-    modalBody.textContent = description;
-    const modalPrimiryButton = modalEl.querySelector('.modal-footer .btn-primary');
-    modalPrimiryButton.setAttribute('href', link);
+    const { title, description } = state.posts.find((el) => el.link === link);
+    watchedState.previewedPost = {
+      link,
+      title,
+      description,
+    };
     setPostReaded(link);
   });
 };

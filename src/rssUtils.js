@@ -10,15 +10,19 @@ const getRssXml = (response) => {
 // generate new feed object
 const parseRSS = (rss) => {
   const items = rss.querySelectorAll('item');
-  const extractableTags = ['title', 'link', 'description', 'pubDate'];
-  const posts = [];
-  items.forEach((item) => posts.push(extractableTags.reduce((post, tag) => {
-    const newObj = {};
-    newObj[tag] = item.querySelector(tag).textContent;
-    return { ...post, ...newObj };
-  }, {})));
-  const lastPubDate = posts.reduce((currentLastDate, { pubDate: pubDateString }) => {
-    const pubDate = new Date(pubDateString);
+  const posts = items.map((item) => {
+    const title = item.querySelector('title').textContent;
+    const link = item.querySelector('link').textContent;
+    const description = item.querySelector('description').textContent;
+    const pubDate = item.querySelector('pubDate').textContent;
+    return {
+      title,
+      link,
+      description,
+      pubDate: new Date(pubDate),
+    };
+  });
+  const lastPubDate = posts.reduce((currentLastDate, { pubDate }) => {
     const time = pubDate.getTime();
     const currentLastTime = currentLastDate.getTime();
     return time > currentLastTime ? pubDate : currentLastDate;
@@ -34,4 +38,10 @@ const parseRSS = (rss) => {
   return result;
 };
 
-export { getRssXml, parseRSS };
+const getFeedObj = ({ title, description, lastPubDate }) => ({
+  title,
+  description,
+  lastPubDate,
+});
+
+export { getRssXml, parseRSS, getFeedObj };

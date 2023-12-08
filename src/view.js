@@ -124,6 +124,20 @@ const UIStateHandler = (splitedPath, value) => {
   }
 };
 
+const renderModalPreview = (link, state) => {
+  const allPosts = state.feeds.flatMap(({ posts }) => posts);
+  console.log(allPosts);
+  console.log(link);
+  const { title, description } = allPosts.find((post) => post.link === link);
+  const modalEl = document.querySelector('#modal');
+  const modalTitle = modalEl.querySelector('.modal-title');
+  modalTitle.textContent = title;
+  const modalBody = modalEl.querySelector('.modal-body');
+  modalBody.textContent = description;
+  const modalPrimiryButton = modalEl.querySelector('.modal-footer .btn-primary');
+  modalPrimiryButton.setAttribute('href', link);
+};
+
 export default function view(path, value, prevValue) {
   const splitedPath = path.split('.');
   switch (splitedPath[0]) {
@@ -138,6 +152,9 @@ export default function view(path, value, prevValue) {
       break;
     case 'UIState':
       UIStateHandler(splitedPath, value);
+      break;
+    case 'previewedPost':
+      renderModalPreview(value, this);
       break;
     default:
   }
