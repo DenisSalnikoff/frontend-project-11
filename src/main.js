@@ -93,7 +93,6 @@ const app = () => {
           setTimeout(() => refreshFeed(url), refreshInterval);
           return;
         }
-
         const rssObj = parseRSS(rssXml);
         // get new and old feeds objects
         const newFeed = { ...getFeedObj(rssObj), url };

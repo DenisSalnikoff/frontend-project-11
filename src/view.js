@@ -43,11 +43,11 @@ const renderFeedsHead = () => {
   postsBody.append(postsListEl);
 };
 
-const renderNewFeed = (feed) => {
-  const feedCont = document.querySelector('.feeds ul');
+const renderFeed = (feed, oldFeed) => {
+  // create new feeds DOM-element
   const feedEl = document.createElement('li');
+  feedEl.setAttribute('url', feed.url);
   feedEl.classList.add('list-group-item', 'border-0', 'border-end-0');
-  feedCont.append(feedEl);
   const feedTitle = document.createElement('h3');
   feedTitle.classList.add('h6', 'm-0');
   feedTitle.textContent = feed.title;
@@ -56,56 +56,52 @@ const renderNewFeed = (feed) => {
   feedDescription.classList.add('m-0', 'small', 'text-black-50');
   feedDescription.textContent = feed.description;
   feedEl.append(feedDescription);
-};
-
-const renderPosts = (feed, state) => {
-  const { posts } = feed;
-  const postCont = document.querySelector('.posts ul');
-
-  posts.forEach((post) => {
-    // create new element
-    const postEl = document.createElement('li');
-    postEl.classList.add(
-      'list-group-item',
-      'd-flex',
-      'justify-content-between',
-      'align-item-start',
-      'border-0',
-      'border-end-0',
-    );
-    // --create link
-    const a = document.createElement('a');
-    const { readed } = state.UIState.posts.find(({ link }) => link === post.link);
-    a.classList.add(readed ? 'fw-normal' : 'fw-bold');
-    a.setAttribute('href', post.link);
-    a.setAttribute('target', '_blank');
-    a.textContent = post.title;
-    postEl.append(a);
-    // --create button
-    const btn = document.createElement('button');
-    btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    btn.textContent = i18n.t('readBtnName');
-    btn.dataset.bsToggle = 'modal';
-    btn.dataset.bsWhatever = `${post.link}`;
-    btn.setAttribute('href', '#modal');
-
-    postEl.append(btn);
-    const postLinkEl = postCont.querySelector(`a[href="${post.link}"]`);
-    // add or replace element
-    if (postLinkEl) {
-      const oldPostEl = postLinkEl.parentNode;
-      postCont.replaceChild(postEl, oldPostEl);
-    } else {
-      postCont.append(postEl);
-    }
-  });
-};
-
-const renderRSS = (newFeed, oldFeed, state) => {
-  if (!oldFeed) {
-    renderNewFeed(newFeed);
+  // add or replace new feeds element
+  const feedCont = document.querySelector('.feeds ul');
+  if (oldFeed) {
+    const oldFeedEl = feedCont.querySelector(`[url="${feed.url}"]`);
+    feedCont.replaceChild(feedEl, oldFeedEl);
+    return;
   }
-  renderPosts(newFeed, state);
+  feedCont.append(feedEl);
+};
+
+const renderPosts = (post, oldPost, state) => {
+  // create new element
+  const postEl = document.createElement('li');
+  postEl.classList.add(
+    'list-group-item',
+    'd-flex',
+    'justify-content-between',
+    'align-item-start',
+    'border-0',
+    'border-end-0',
+  );
+  // --create link
+  const a = document.createElement('a');
+  const { readed } = state.UIState.posts.find(({ link }) => link === post.link);
+  a.classList.add(readed ? 'fw-normal' : 'fw-bold');
+  a.setAttribute('href', post.link);
+  a.setAttribute('target', '_blank');
+  a.textContent = post.title;
+  postEl.append(a);
+  // --create button
+  const btn = document.createElement('button');
+  btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+  btn.textContent = i18n.t('readBtnName');
+  btn.dataset.bsToggle = 'modal';
+  btn.dataset.bsWhatever = `${post.link}`;
+  btn.setAttribute('href', '#modal');
+  postEl.append(btn);
+  // add or replace element
+  const postCont = document.querySelector('.posts ul');
+  if (oldPost) {
+    const postLinkEl = postCont.querySelector(`a[href="${post.link}"]`);
+    const oldPostEl = postLinkEl.parentNode;
+    postCont.replaceChild(postEl, oldPostEl);
+    return;
+  }
+  postCont.append(postEl);
 };
 
 const renderPostUI = ({ link, readed }) => {
@@ -124,11 +120,7 @@ const UIStateHandler = (splitedPath, value) => {
   }
 };
 
-const renderModalPreview = (link, state) => {
-  const allPosts = state.feeds.flatMap(({ posts }) => posts);
-  console.log(allPosts);
-  console.log(link);
-  const { title, description } = allPosts.find((post) => post.link === link);
+const renderModalPreview = ({ link, title, description }) => {
   const modalEl = document.querySelector('#modal');
   const modalTitle = modalEl.querySelector('.modal-title');
   modalTitle.textContent = title;
@@ -148,13 +140,16 @@ export default function view(path, value, prevValue) {
       renderFeedsHead();
       break;
     case 'feeds':
-      renderRSS(value, prevValue, this);
+      renderFeed(value, prevValue);
+      break;
+    case 'posts':
+      renderPosts(value, prevValue, this);
       break;
     case 'UIState':
       UIStateHandler(splitedPath, value);
       break;
     case 'previewedPost':
-      renderModalPreview(value, this);
+      renderModalPreview(value);
       break;
     default:
   }

@@ -10,17 +10,18 @@ const getRssXml = (response) => {
 // generate new feed object
 const parseRSS = (rss) => {
   const items = rss.querySelectorAll('item');
-  const posts = items.map((item) => {
+  const posts = [];
+  items.forEach((item) => {
     const title = item.querySelector('title').textContent;
     const link = item.querySelector('link').textContent;
     const description = item.querySelector('description').textContent;
     const pubDate = item.querySelector('pubDate').textContent;
-    return {
+    posts.push({
       title,
       link,
       description,
       pubDate: new Date(pubDate),
-    };
+    });
   });
   const lastPubDate = posts.reduce((currentLastDate, { pubDate }) => {
     const time = pubDate.getTime();
