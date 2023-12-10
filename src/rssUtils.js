@@ -1,4 +1,11 @@
 const parser = new DOMParser();
+const proxyUrl = new URL('https://allorigins.hexlet.app/get');
+
+const getProxyLink = (url) => {
+  proxyUrl.searchParams.set('url', url);
+  proxyUrl.searchParams.set('t', new Date().getTime());
+  return proxyUrl;
+};
 
 // get XML object from response
 const getRssXml = (response) => {
@@ -45,4 +52,9 @@ const getFeedObj = ({ title, description, lastPubDate }) => ({
   lastPubDate,
 });
 
-export { getRssXml, parseRSS, getFeedObj };
+export {
+  getRssXml,
+  parseRSS,
+  getFeedObj,
+  getProxyLink,
+};

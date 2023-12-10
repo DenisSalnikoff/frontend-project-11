@@ -4,7 +4,12 @@ import i18n from 'i18next';
 import axios from 'axios';
 import view from './view';
 import resources from './languages/index';
-import { getRssXml, parseRSS, getFeedObj } from './rssUtils';
+import {
+  getRssXml,
+  parseRSS,
+  getFeedObj,
+  getProxyLink,
+} from './rssUtils';
 
 const app = () => {
   // MODEL
@@ -65,7 +70,6 @@ const app = () => {
 
   // CONTROLLER
   const watchedState = onChange(state, view);
-  const proxyUrl = new URL('https://allorigins.hexlet.app/get');
   const refreshInterval = 5000;
 
   const setPostReaded = (link) => {
@@ -84,8 +88,7 @@ const app = () => {
 
   // refresh posts of feed every 5 sec
   const refreshFeed = (url) => {
-    proxyUrl.searchParams.set('url', url);
-    axios.get(proxyUrl)
+    axios.get(getProxyLink(url))
       .then((response) => {
         const rssXml = getRssXml(response);
         // validating RSS XML object
@@ -144,8 +147,7 @@ const app = () => {
     // adding feed from inputUrl
       .then(() => {
         watchedState.interface = { valid: true, message: 'gettingRSS' };
-        proxyUrl.searchParams.set('url', inputUrl);
-        return axios.get(proxyUrl);
+        return axios.get(getProxyLink(inputUrl));
       })
       .then((response) => {
         const rssXml = getRssXml(response);
