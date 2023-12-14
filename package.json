@@ -22,7 +22,7 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
   },
-  "name": "my-webpack-project",
+  "name": "@hexlet/code",
   "description": "My webpack project",
   "version": "1.0.0",
   "main": "src/index.js",
