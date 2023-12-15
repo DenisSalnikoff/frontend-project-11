@@ -3,7 +3,7 @@ const proxyUrl = new URL('https://allorigins.hexlet.app/get');
 
 const getProxyLink = (url) => {
   proxyUrl.searchParams.set('url', url);
-  proxyUrl.searchParams.set('t', new Date().getTime());
+  proxyUrl.searchParams.set('disableCache', true);
   return proxyUrl;
 };
 
