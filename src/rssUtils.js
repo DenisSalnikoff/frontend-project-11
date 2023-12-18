@@ -14,7 +14,7 @@ const getRssXml = (response) => {
   return rssXml;
 };
 
-// generate new feed object
+// generate new RSS object
 const parseRSS = (rss) => {
   const items = rss.querySelectorAll('item');
   const posts = [];

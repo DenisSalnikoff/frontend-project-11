@@ -19,37 +19,11 @@ const app = () => {
       message: '',
     },
     hasFeed: false,
-    feeds: [
-      // {
-      //   url,
-      //   title,
-      //   description,
-      //   lastPubDate,
-      // },
-      // feed2,
-    ],
-    posts: [
-      // {
-      //   title,
-      //   description,
-      //   link,
-      //   pubDate,
-      // },
-      // item2,
-    ],
-    previewedPost: {
-      // link,
-      // title,
-      // description,
-    },
+    feeds: [],
+    posts: [],
+    previewedPost: {},
     UIState: {
-      posts: [
-        // {
-        //   link,
-        //   readed,
-        // },
-        // post2,
-      ],
+      posts: [],
     },
   };
   i18n.init({
@@ -87,13 +61,12 @@ const app = () => {
   };
 
   // refresh posts of feed every 5 sec
-  const refreshFeed = (url) => {
-    axios.get(getProxyLink(url))
+  const refreshFeeds = () => {
+    const refreshFeedPromises = state.feeds.map(({ url }) => axios.get(getProxyLink(url))
       .then((response) => {
         const rssXml = getRssXml(response);
         // validating RSS XML object
         if (!rssXml) {
-          setTimeout(() => refreshFeed(url), refreshInterval);
           return;
         }
         const rssObj = parseRSS(rssXml);
@@ -102,12 +75,12 @@ const app = () => {
         const oldFeed = state.feeds.find((el) => el.url === url);
         // compare last public date of new and old feeds objects
         if (newFeed.lastPubDate.getTime() === oldFeed.lastPubDate.getTime()) {
-          setTimeout(() => refreshFeed(url), refreshInterval);
           return;
         }
 
         // replace feed
         watchedState.feeds[state.feeds.indexOf(oldFeed)] = newFeed;
+
         // replace or add posts if it need
         rssObj.posts.forEach((newPost) => {
           const oldPost = state.posts.find(({ link }) => newPost.link === link);
@@ -124,12 +97,13 @@ const app = () => {
             watchedState.posts[state.posts.length] = newPost;
           }
         });
-
         addClickListenersToPosts(rssObj.posts);
-        setTimeout(() => refreshFeed(url), refreshInterval);
-      })
-      .catch(() => setTimeout(() => refreshFeed(url), refreshInterval));
+      }));
+    Promise.all(refreshFeedPromises)
+      .finally(() => setTimeout(() => refreshFeeds(), refreshInterval));
   };
+  // Run updater
+  refreshFeeds();
 
   // handler of submit button
   rssLinkForm.addEventListener('submit', (e) => {
@@ -173,7 +147,6 @@ const app = () => {
         addClickListenersToPosts(rssObj.posts);
 
         watchedState.interface = { valid: true, message: 'added' };
-        window.setTimeout(() => refreshFeed(inputUrl), refreshInterval);
       })
       .catch((error) => {
         const message = error.request ? 'requestError' : error.message;
@@ -189,11 +162,7 @@ const app = () => {
     const button = e.relatedTarget;
     const link = button.getAttribute('data-bs-whatever');
     const { title, description } = state.posts.find((el) => el.link === link);
-    watchedState.previewedPost = {
-      link,
-      title,
-      description,
-    };
+    watchedState.previewedPost = { link, title, description };
     setPostReaded(link);
   });
 };

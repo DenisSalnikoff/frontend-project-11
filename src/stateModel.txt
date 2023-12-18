@@ -1,0 +1,39 @@
+const state = {
+  interface: {
+    valid: true,
+    message: '',
+  },
+  hasFeed: false,
+  feeds: [
+    {
+      url,
+      title,
+      description,
+      lastPubDate,
+    },
+    feed2,
+  ],
+  posts: [
+    {
+      title,
+      description,
+      link,
+      pubDate,
+    },
+    item2,
+  ],
+  previewedPost: {
+    link,
+    title,
+    description,
+  },
+  UIState: {
+    posts: [
+      // {
+      //   link,
+      //   readed,
+      // },
+      // post2,
+    ],
+  },
+};
