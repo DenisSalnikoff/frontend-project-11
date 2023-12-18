@@ -51,7 +51,7 @@ const app = () => {
     watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
   };
 
-  // set click listener to all post of unput feed. Listener making link viewed
+  // set click listener to all post of input feed. Listener making link viewed
   const addClickListenersToPosts = (posts) => {
     const postsBlock = document.querySelector('.posts');
     posts.forEach(({ link }) => {
@@ -59,51 +59,6 @@ const app = () => {
       postEl.addEventListener('click', () => setPostReaded(link));
     });
   };
-
-  // refresh posts of feed every 5 sec
-  const refreshFeeds = () => {
-    const refreshFeedPromises = state.feeds.map(({ url }) => axios.get(getProxyLink(url))
-      .then((response) => {
-        const rssXml = getRssXml(response);
-        // validating RSS XML object
-        if (!rssXml) {
-          return;
-        }
-        const rssObj = parseRSS(rssXml);
-        // get new and old feeds objects
-        const newFeed = { ...getFeedObj(rssObj), url };
-        const oldFeed = state.feeds.find((el) => el.url === url);
-        // compare last public date of new and old feeds objects
-        if (newFeed.lastPubDate.getTime() === oldFeed.lastPubDate.getTime()) {
-          return;
-        }
-
-        // replace feed
-        watchedState.feeds[state.feeds.indexOf(oldFeed)] = newFeed;
-
-        // replace or add posts if it need
-        rssObj.posts.forEach((newPost) => {
-          const oldPost = state.posts.find(({ link }) => newPost.link === link);
-          // replace case
-          if (oldPost && oldPost.pubDate.getTime() < newPost.pubDate.getTime()) {
-            const oldPostUIIndex = state.UIState.posts
-              .findIndex(({ link }) => newPost.link === link);
-            state.UIState.posts[oldPostUIIndex] = { link: newPost.link, readed: false };
-            watchedState.posts[state.posts.indexOf(oldPost)] = newPost;
-          }
-          // add case
-          if (!oldPost) {
-            state.UIState.posts.push({ link: newPost.link, readed: false });
-            watchedState.posts[state.posts.length] = newPost;
-          }
-        });
-        addClickListenersToPosts(rssObj.posts);
-      }));
-    Promise.all(refreshFeedPromises)
-      .finally(() => setTimeout(() => refreshFeeds(), refreshInterval));
-  };
-  // Run updater
-  refreshFeeds();
 
   // handler of submit button
   rssLinkForm.addEventListener('submit', (e) => {
@@ -165,6 +120,51 @@ const app = () => {
     watchedState.previewedPost = { link, title, description };
     setPostReaded(link);
   });
+
+  // post updater
+  const refreshFeeds = () => {
+    const refreshFeedPromises = state.feeds.map(({ url }) => axios.get(getProxyLink(url))
+      .then((response) => {
+        const rssXml = getRssXml(response);
+        // validating RSS XML object
+        if (!rssXml) {
+          return;
+        }
+        const rssObj = parseRSS(rssXml);
+        // get new and old feeds objects
+        const newFeed = { ...getFeedObj(rssObj), url };
+        const oldFeed = state.feeds.find((el) => el.url === url);
+        // compare last public date of new and old feeds objects
+        if (newFeed.lastPubDate.getTime() === oldFeed.lastPubDate.getTime()) {
+          return;
+        }
+
+        // replace feed
+        watchedState.feeds[state.feeds.indexOf(oldFeed)] = newFeed;
+
+        // replace or add posts if it need
+        rssObj.posts.forEach((newPost) => {
+          const oldPost = state.posts.find(({ link }) => newPost.link === link);
+          // replace case
+          if (oldPost && oldPost.pubDate.getTime() < newPost.pubDate.getTime()) {
+            const oldPostUIIndex = state.UIState.posts
+              .findIndex(({ link }) => newPost.link === link);
+            state.UIState.posts[oldPostUIIndex] = { link: newPost.link, readed: false };
+            watchedState.posts[state.posts.indexOf(oldPost)] = newPost;
+          }
+          // add case
+          if (!oldPost) {
+            state.UIState.posts.push({ link: newPost.link, readed: false });
+            watchedState.posts[state.posts.length] = newPost;
+          }
+        });
+        addClickListenersToPosts(rssObj.posts);
+      }));
+    Promise.all(refreshFeedPromises)
+      .finally(() => setTimeout(() => refreshFeeds(), refreshInterval));
+  };
+  // Run updater
+  refreshFeeds();
 };
 
 export default app;
