@@ -27,34 +27,45 @@ const parseRSS = (rss) => {
       title,
       link,
       description,
-      pubDate: new Date(pubDate),
+      pubDate,
     });
   });
-  const lastPubDate = posts.reduce((currentLastDate, { pubDate }) => {
-    const time = pubDate.getTime();
-    const currentLastTime = currentLastDate.getTime();
-    return time > currentLastTime ? pubDate : currentLastDate;
-  }, new Date(0));
   const title = rss.querySelector('channel > title').textContent;
   const description = rss.querySelector('channel > description').textContent;
   const result = {
     title,
     description,
-    lastPubDate,
     posts,
   };
   return result;
 };
 
-const getFeedObj = ({ title, description, lastPubDate }) => ({
-  title,
-  description,
-  lastPubDate,
-});
+const genFeedsAndPostsStates = (parsedRSS, feedsUrl) => {
+  const posts = parsedRSS.posts.map(({
+    title, link, description, pubDate,
+  }) => ({
+    title,
+    link,
+    description,
+    pubDate: new Date(pubDate),
+  }));
+  const lastPubDate = posts.reduce((currentLastDate, { pubDate }) => {
+    const time = pubDate.getTime();
+    const currentLastTime = currentLastDate.getTime();
+    return time > currentLastTime ? pubDate : currentLastDate;
+  }, new Date(0));
+  const feed = {
+    url: feedsUrl,
+    title: parsedRSS.title,
+    description: parsedRSS.description,
+    lastPubDate,
+  };
+  return [feed, posts];
+};
 
 export {
   getRssXml,
   parseRSS,
-  getFeedObj,
+  genFeedsAndPostsStates,
   getProxyLink,
 };

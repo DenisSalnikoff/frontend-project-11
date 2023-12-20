@@ -111,15 +111,6 @@ const renderPostUI = ({ link, readed }) => {
   postLinkEl.classList.add(readedClass);
 };
 
-const UIStateHandler = (splitedPath, value) => {
-  switch (splitedPath[1]) {
-    case 'posts':
-      renderPostUI(value);
-      break;
-    default:
-  }
-};
-
 const renderModalPreview = ({ link, title, description }) => {
   const modalEl = document.querySelector('#modal');
   const modalTitle = modalEl.querySelector('.modal-title');
@@ -146,7 +137,7 @@ export default function view(path, value, prevValue) {
       renderPosts(value, prevValue, this);
       break;
     case 'UIState':
-      UIStateHandler(splitedPath, value);
+      renderPostUI(value);
       break;
     case 'previewedPost':
       renderModalPreview(value);

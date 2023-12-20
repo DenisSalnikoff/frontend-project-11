@@ -7,7 +7,7 @@ import resources from './languages/index';
 import {
   getRssXml,
   parseRSS,
-  getFeedObj,
+  genFeedsAndPostsStates,
   getProxyLink,
 } from './rssUtils';
 
@@ -28,7 +28,7 @@ const app = () => {
   };
   i18n.init({
     lng: 'ru',
-    debug: true,
+    debug: false,
     resources,
   });
 
@@ -49,15 +49,6 @@ const app = () => {
   const setPostReaded = (link) => {
     const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
     watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
-  };
-
-  // set click listener to all post of input feed. Listener making link viewed
-  const addClickListenersToPosts = (posts) => {
-    const postsBlock = document.querySelector('.posts');
-    posts.forEach(({ link }) => {
-      const postEl = postsBlock.querySelector(`a[href="${link}"]`);
-      postEl.addEventListener('click', () => setPostReaded(link));
-    });
   };
 
   // handler of submit button
@@ -85,21 +76,30 @@ const app = () => {
           throw new Error('invalidRss');
         }
         // Parsing rss from XML to object
-        const rssObj = parseRSS(rssXml);
+        const parsedRSS = parseRSS(rssXml);
 
-        // getting feed info
-        const feed = { ...getFeedObj(rssObj), url: inputUrl };
+        // gen feed and posts states
+        const [feed, posts] = genFeedsAndPostsStates(parsedRSS, inputUrl);
 
         // adding new feed
-        watchedState.hasFeed = true;
+        if (!state.hasFeed) {
+          watchedState.hasFeed = true;
+          const postsUl = document.querySelector('.posts ul');
+          postsUl.addEventListener('click', ({ target }) => {
+            if (target.tagName !== 'A') {
+              return;
+            }
+            const link = target.getAttribute('href');
+            setPostReaded(link);
+          });
+        }
         watchedState.feeds[state.feeds.length] = feed;
 
         // adding new posts and create UIState elemets for post
-        rssObj.posts.forEach((post) => {
+        posts.forEach((post) => {
           state.UIState.posts.push({ link: post.link, readed: false });
           watchedState.posts[state.posts.length] = post;
         });
-        addClickListenersToPosts(rssObj.posts);
 
         watchedState.interface = { valid: true, message: 'added' };
       })
@@ -130,9 +130,9 @@ const app = () => {
         if (!rssXml) {
           return;
         }
-        const rssObj = parseRSS(rssXml);
+        const parsedRSS = parseRSS(rssXml);
         // get new and old feeds objects
-        const newFeed = { ...getFeedObj(rssObj), url };
+        const [newFeed, posts] = genFeedsAndPostsStates(parsedRSS, url);
         const oldFeed = state.feeds.find((el) => el.url === url);
         // compare last public date of new and old feeds objects
         if (newFeed.lastPubDate.getTime() === oldFeed.lastPubDate.getTime()) {
@@ -143,7 +143,7 @@ const app = () => {
         watchedState.feeds[state.feeds.indexOf(oldFeed)] = newFeed;
 
         // replace or add posts if it need
-        rssObj.posts.forEach((newPost) => {
+        posts.forEach((newPost) => {
           const oldPost = state.posts.find(({ link }) => newPost.link === link);
           // replace case
           if (oldPost && oldPost.pubDate.getTime() < newPost.pubDate.getTime()) {
@@ -158,7 +158,6 @@ const app = () => {
             watchedState.posts[state.posts.length] = newPost;
           }
         });
-        addClickListenersToPosts(rssObj.posts);
       }));
     Promise.all(refreshFeedPromises)
       .finally(() => setTimeout(() => refreshFeeds(), refreshInterval));
