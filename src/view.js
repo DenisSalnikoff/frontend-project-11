@@ -1,12 +1,35 @@
 import i18n from 'i18next';
 
-const renderError = (value) => {
-  const errorElement = document.querySelector('p.feedback');
-  const cl = errorElement.classList;
-  cl.remove('text-danger');
-  cl.remove('text-success');
-  cl.add(value.valid ? 'text-success' : 'text-danger');
-  errorElement.textContent = i18n.t(`messages.${value.message}`);
+const renderInputEl = (addingProcess) => {
+  // submit button
+  const submitBtnEl = document.querySelector('.rss-form [type="submit"]');
+  submitBtnEl.removeAttribute('disabled');
+  if (addingProcess.status === 'getting') {
+    submitBtnEl.setAttribute('disabled', '');
+  }
+
+  // input field
+  const inputField = document.querySelector('#url-input');
+  inputField.focus();
+  if (addingProcess.status === 'added') {
+    inputField.value = '';
+  }
+
+  // feedback element
+  if (addingProcess.status === 'failed') {
+    return;
+  }
+  const feedbackElement = document.querySelector('p.feedback');
+  feedbackElement.classList.remove('text-danger');
+  feedbackElement.classList.add('text-success');
+  feedbackElement.textContent = i18n.t(`messages.${addingProcess.status}`);
+};
+
+const renderError = (error) => {
+  const feedbackElement = document.querySelector('p.feedback');
+  feedbackElement.classList.remove('text-success');
+  feedbackElement.classList.add('text-danger');
+  feedbackElement.textContent = i18n.t(`messages.${error}`);
 };
 
 const renderFeedsHead = () => {
@@ -124,8 +147,11 @@ const renderModalPreview = ({ link, title, description }) => {
 export default function view(path, value, prevValue) {
   const splitedPath = path.split('.');
   switch (splitedPath[0]) {
-    case 'interface':
-      renderError(value);
+    case 'addingProcess':
+      renderInputEl(value);
+      if (value.status === 'failed') {
+        renderError(value.error);
+      }
       break;
     case 'hasFeed':
       renderFeedsHead();

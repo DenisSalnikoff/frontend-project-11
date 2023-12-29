@@ -6,7 +6,7 @@ export default {
       invalidRss: 'Ресурс не содержит валидный RSS',
       added: 'RSS успешно загружен',
       requestError: 'Ошибка сети',
-      gettingRSS: 'Просмотр',
+      getting: 'Просмотр',
     },
     titles: {
       feeds: 'Фиды',

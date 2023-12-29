@@ -14,9 +14,9 @@ import {
 const app = () => {
   // MODEL
   const state = {
-    interface: {
-      valid: true,
-      message: '',
+    addingProcess: {
+      status: 'start',
+      error: null,
     },
     hasFeed: false,
     feeds: [],
@@ -35,12 +35,7 @@ const app = () => {
   // VIEW
   const rssLinkForm = document.querySelector('form');
   const modalEl = document.querySelector('#modal');
-
-  const resetInputField = () => {
-    const inputField = rssLinkForm.querySelector('input');
-    inputField.value = '';
-    inputField.focus();
-  };
+  const postsEl = document.querySelector('.posts');
 
   // CONTROLLER
   const watchedState = onChange(state, view);
@@ -50,6 +45,15 @@ const app = () => {
     const currentPostUIIndex = state.UIState.posts.findIndex((postUI) => postUI.link === link);
     watchedState.UIState.posts[currentPostUIIndex] = { link, readed: true };
   };
+
+  // UIState.posts handler
+  postsEl.addEventListener('click', ({ target }) => {
+    if (target.tagName !== 'A') {
+      return;
+    }
+    const link = target.getAttribute('href');
+    setPostReaded(link);
+  });
 
   // handler of submit button
   rssLinkForm.addEventListener('submit', (e) => {
@@ -66,7 +70,7 @@ const app = () => {
 
     // adding feed from inputUrl
       .then(() => {
-        watchedState.interface = { valid: true, message: 'gettingRSS' };
+        watchedState.addingProcess = { status: 'getting', error: null };
         return axios.get(getProxyLink(inputUrl));
       })
       .then((response) => {
@@ -82,17 +86,7 @@ const app = () => {
         const [feed, posts] = genFeedsAndPostsStates(parsedRSS, inputUrl);
 
         // adding new feed
-        if (!state.hasFeed) {
-          watchedState.hasFeed = true;
-          const postsUl = document.querySelector('.posts ul');
-          postsUl.addEventListener('click', ({ target }) => {
-            if (target.tagName !== 'A') {
-              return;
-            }
-            const link = target.getAttribute('href');
-            setPostReaded(link);
-          });
-        }
+        watchedState.hasFeed = true;
         watchedState.feeds[state.feeds.length] = feed;
 
         // adding new posts and create UIState elemets for post
@@ -101,15 +95,12 @@ const app = () => {
           watchedState.posts[state.posts.length] = post;
         });
 
-        watchedState.interface = { valid: true, message: 'added' };
+        watchedState.addingProcess = { status: 'added', error: null };
       })
       .catch((error) => {
         const message = error.request ? 'requestError' : error.message;
-        watchedState.interface = { valid: false, message };
+        watchedState.addingProcess = { status: 'failed', error: message };
       });
-
-    // clearing inputField
-    resetInputField();
   });
 
   // handler of modal window
